@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="240dp"
+    android:minHeight="140dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_seat_memory_driver"
+    android:previewLayout="@layout/widget_seat_memory_driver"
+    android:previewImage="@drawable/seat_set_detail_position_indicator_active"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

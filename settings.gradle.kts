@@ -19,10 +19,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { setUrl("https://api.xposed.info/") }
     }
 }
 
-rootProject.name = "MonjaroWipers"
+rootProject.name = "Geely_Monjaro_Widgets"
 include(":app")
 include(":glycar-api")
+include(":psd-widget-module")
  

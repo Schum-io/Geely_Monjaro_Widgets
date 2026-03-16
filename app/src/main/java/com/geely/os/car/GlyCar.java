@@ -28,6 +28,7 @@ public final class GlyCar {
 
         private final ICar mCar;
         private volatile ICarFunction mCarFunction;
+        private volatile ICarFunction.IFunctionValueWatcher mWatcher;
 
         Bridge(ICar car, ConnectionListener listener) {
             mCar = car;
@@ -73,6 +74,72 @@ public final class GlyCar {
                 return false;
             }
             return cf.setFunctionValue(propertyId, areaId, value);
+        }
+
+        @Override
+        public int getIntProperty(int propertyId) {
+            ICarFunction cf = mCarFunction;
+            if (cf == null) {
+                Log.w(TAG, "getIntProperty(no-area) called but carFunction is null");
+                return 0;
+            }
+            return cf.getFunctionValue(propertyId);
+        }
+
+        @Override
+        public boolean setIntProperty(int propertyId, int value) {
+            ICarFunction cf = mCarFunction;
+            if (cf == null) {
+                Log.w(TAG, "setIntProperty(no-area) called but carFunction is null");
+                return false;
+            }
+            return cf.setFunctionValue(propertyId, value);
+        }
+
+        @Override
+        public boolean registerValueWatcher(int[] propertyIds, final GlyCarValueWatcher watcher) {
+            ICarFunction cf = mCarFunction;
+            if (cf == null || watcher == null) {
+                Log.w(TAG, "registerValueWatcher: carFunction null or watcher null");
+                return false;
+            }
+            ICarFunction.IFunctionValueWatcher w = new ICarFunction.IFunctionValueWatcher() {
+                @Override
+                public void onFunctionValueChanged(int propertyId, int areaId, int value) {
+                    watcher.onPropertyChanged(propertyId, areaId);
+                }
+
+                @Override
+                public void onCustomizeFunctionValueChanged(int propertyId, int areaId, float value) {
+                    watcher.onPropertyChanged(propertyId, areaId);
+                }
+
+                @Override
+                public void onFunctionChanged(int propertyId) {
+                    watcher.onPropertyChanged(propertyId, 0);
+                }
+
+                @Override
+                public void onSupportedFunctionStatusChanged(int propertyId, int areaId,
+                        com.ecarx.xui.adaptapi.FunctionStatus status) {
+                }
+
+                @Override
+                public void onSupportedFunctionValueChanged(int propertyId, int[] supportedValues) {
+                }
+            };
+            mWatcher = w;
+            return cf.registerFunctionValueWatcher(propertyIds, w);
+        }
+
+        @Override
+        public void unregisterValueWatcher() {
+            ICarFunction cf = mCarFunction;
+            ICarFunction.IFunctionValueWatcher w = mWatcher;
+            if (cf != null && w != null) {
+                cf.unregisterFunctionValueWatcher(w);
+            }
+            mWatcher = null;
         }
 
         @Override
