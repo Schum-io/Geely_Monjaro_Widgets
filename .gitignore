@@ -12,3 +12,5 @@ local.properties
 /.kotlin
 /app/release
 /glycar-api/build
+/psd-widget-module/build
+/psd-widget-module/release

@@ -1,7 +1,39 @@
 <resources>
-    <string name="app_name">Monjaro Wipers</string>
-    <string name="wiper_service_widget_content_description">Wiper service mode toggle</string>
+    <string name="app_name">Monjaro Widgets</string>
+
+    <!-- Дворники -->
+    <string name="wiper_service_widget_content_description">Сервисный режим дворников</string>
     <string name="wiper_service_label">Сервисный режим дворников</string>
     <string name="wiper_service_on">Включён</string>
     <string name="wiper_service_off">Выключен</string>
+
+    <!-- Багажник -->
+    <string name="trunk_widget_content_description">Открыть или закрыть багажник</string>
+    <string name="trunk_label">Багажник</string>
+
+    <!-- Память сидений -->
+    <string name="seat_memory_driver">Сиденье водителя</string>
+    <string name="seat_memory_passenger">Сиденье пассажира</string>
+    <string name="seat_memory_driver_label">Память сиденья водителя</string>
+    <string name="seat_memory_passenger_label">Память сиденья пассажира</string>
+    <string name="seat_profile_1_description">Профиль 1</string>
+    <string name="seat_profile_2_description">Профиль 2</string>
+    <string name="seat_profile_3_description">Профиль 3</string>
+
+    <!-- Подогрев / вентиляция сидений -->
+    <string name="climate_widget_content_description">Переключить уровень</string>
+    <string name="heat_driver_label">Подогрев водителя</string>
+    <string name="heat_passenger_label">Подогрев пассажира</string>
+    <string name="vent_driver_label">Вентиляция водителя</string>
+    <string name="vent_passenger_label">Вентиляция пассажира</string>
+    <string name="climate_driver">Водитель</string>
+    <string name="climate_passenger">Пассажир</string>
+    <string name="climate_heat">Подогрев</string>
+    <string name="climate_vent">Вентиляция</string>
+    <string name="climate_steering">Руль</string>
+
+    <!-- О приложении -->
+    <string name="about_title">О приложении</string>
+    <string name="about_author">Автор: Schum</string>
+    <string name="heat_steering_label">Подогрев руля</string>
 </resources>

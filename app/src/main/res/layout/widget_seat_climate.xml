@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/widget_frame"
+    android:padding="10dp"
+    android:clickable="false">
+
+    <TextView
+        android:id="@+id/climateTopText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/climate_driver"
+        android:textColor="@color/widget_label_text"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="18sp"
+        android:maxLines="1" />
+
+    <FrameLayout
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_marginVertical="4dp">
+
+        <ImageView
+            android:id="@+id/climateCircle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/climate_circle_off"
+            android:focusable="false"
+            android:clickable="false"
+            android:contentDescription="circle" />
+
+        <ImageView
+            android:id="@+id/climateIcon"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center"
+            android:src="@drawable/seat_heat_level0_status"
+            android:focusable="true"
+            android:clickable="true"
+            android:contentDescription="@string/climate_widget_content_description" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/climateBottomText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/climate_heat"
+        android:textColor="@color/widget_label_text"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="16sp"
+        android:maxLines="1" />
+
+</LinearLayout>

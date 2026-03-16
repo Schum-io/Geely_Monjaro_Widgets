@@ -4,7 +4,7 @@
     android:minHeight="110dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_wiper_service"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewLayout="@layout/widget_wiper_service"
+    android:previewImage="@drawable/ic_wiper_off"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
-

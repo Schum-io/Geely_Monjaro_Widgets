@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_frame"
+    android:padding="10dp"
+    android:clickable="false">
+
+    <FrameLayout
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:layout_centerInParent="true">
+
+        <ImageView
+            android:id="@+id/stateCircle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/climate_circle_off"
+            android:focusable="false"
+            android:clickable="false"
+            android:contentDescription="circle" />
+
+        <ImageView
+            android:id="@+id/trunkIcon"
+            android:layout_width="62dp"
+            android:layout_height="62dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_trunk_off"
+            android:focusable="true"
+            android:clickable="true"
+            android:contentDescription="@string/trunk_widget_content_description" />
+    </FrameLayout>
+
+</RelativeLayout>
