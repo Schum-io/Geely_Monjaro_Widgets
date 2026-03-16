@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_frame"
+    android:clickable="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/seatTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/seat_memory_passenger"
+            android:textColor="@color/widget_label_text"
+            android:fontFamily="sans-serif-medium"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <FrameLayout
+                android:id="@+id/seatButton1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="92dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/seatIcon1"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/seat_set_position_left_off"
+                    android:contentDescription="@string/seat_profile_1_description" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="1"
+                    android:textColor="#ffffffff"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:shadowColor="#cc000000"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="5" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/seatButton2"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="92dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/seatIcon2"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/seat_set_position_left_off"
+                    android:contentDescription="@string/seat_profile_2_description" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="2"
+                    android:textColor="#ffffffff"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:shadowColor="#cc000000"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="5" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/seatButton3"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="92dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/seatIcon3"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/seat_set_position_left_off"
+                    android:contentDescription="@string/seat_profile_3_description" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="3"
+                    android:textColor="#ffffffff"
+                    android:textStyle="bold"
+                    android:textSize="28sp"
+                    android:shadowColor="#cc000000"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="5" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

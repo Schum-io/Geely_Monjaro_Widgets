@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Monjaro PSD Widgets</string>
+    <string name="xposed_description">Добавляет виджеты Monjaro на экран пассажира (хук whitelist лаунчера oneOS_Launcher3).</string>
+</resources>

@@ -3,36 +3,151 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.car.permission.CAR_VENDOR_EXTENSION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/ic_launcher_app"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_launcher_app"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MonjaroWipers">
-
+        android:theme="@style/Theme.Geely_Monjaro_Widgets">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Geely_Monjaro_Widgets"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <receiver
-            android:name=".WiperServiceWidgetProvider"
-            android:exported="false">
+            android:name=".widget.wipers.WiperServiceWidgetProvider"
+            android:exported="false"
+            android:label="@string/wiper_service_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/wiper_service_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.trunk.TrunkWidgetProvider"
+            android:exported="false"
+            android:label="@string/trunk_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/trunk_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.seat.DriverSeatMemoryWidgetProvider"
+            android:exported="false"
+            android:label="@string/seat_memory_driver_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/seat_driver_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.seat.PassengerSeatMemoryWidgetProvider"
+            android:exported="false"
+            android:label="@string/seat_memory_passenger_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/seat_passenger_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.DriverSeatHeatWidgetProvider"
+            android:exported="false"
+            android:label="@string/heat_driver_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/heat_driver_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.PassengerSeatHeatWidgetProvider"
+            android:exported="false"
+            android:label="@string/heat_passenger_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/heat_passenger_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.DriverSeatVentWidgetProvider"
+            android:exported="false"
+            android:label="@string/vent_driver_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vent_driver_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.PassengerSeatVentWidgetProvider"
+            android:exported="false"
+            android:label="@string/vent_passenger_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vent_passenger_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.SteeringWheelHeatWidgetProvider"
+            android:exported="false"
+            android:label="@string/heat_steering_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/heat_steering_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".service.CarStateService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
         </receiver>
 
     </application>
