@@ -8,6 +8,9 @@ public interface IGlyCar {
     int getIntProperty(int propertyId);
     boolean setIntProperty(int propertyId, int value);
 
+    /** Чтение значения сенсора (например уровень топлива в %). */
+    float getSensorValue(int sensorType);
+
     /** Подписка на изменения значений указанных свойств. */
     boolean registerValueWatcher(int[] propertyIds, GlyCarValueWatcher watcher);
     /** Снять ранее зарегистрированную подписку. */

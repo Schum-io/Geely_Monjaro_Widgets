@@ -27,6 +27,9 @@ class TrunkWidgetProvider : ToggleCarWidgetProvider() {
         car.setIntProperty(CarProperties.TRUNK_COMMAND, CarProperties.AREA_TRUNK, command)
     }
 
+    // Створка едет — TRUNK_STATE меняется не сразу, поэтому показываем сразу.
+    override val optimistic = true
+
     override fun iconRes(active: Boolean): Int =
         if (active) R.drawable.ic_trunk_on else R.drawable.ic_trunk_off
 

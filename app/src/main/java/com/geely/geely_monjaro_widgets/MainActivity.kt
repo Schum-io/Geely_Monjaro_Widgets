@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private val steeringHeatLevel = mutableStateOf(0)
     private val recircOn = mutableStateOf(false)
     private val rearDefrostOn = mutableStateOf(false)
+    private val fuelPercent = mutableStateOf(-1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         onRecircToggle = ::onRecircToggle,
                         rearDefrostOn = rearDefrostOn.value,
                         onRearDefrostToggle = ::onRearDefrostToggle,
+                        fuelPercent = fuelPercent.value,
                     )
                 }
             }
@@ -134,6 +136,8 @@ class MainActivity : ComponentActivity() {
         recircOn.value =
             c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
         rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
+        val fuel = c.getSensorValue(CarProperties.SENSOR_FUEL_PERCENTAGE)
+        fuelPercent.value = if (fuel > 0f) Math.round(fuel) else -1
     }
 
     private fun onRecircToggle() {
@@ -225,6 +229,7 @@ private fun ControlScreen(
     onRecircToggle: () -> Unit,
     rearDefrostOn: Boolean,
     onRearDefrostToggle: () -> Unit,
+    fuelPercent: Int,
 ) {
     Column(
         modifier = modifier
@@ -314,6 +319,11 @@ private fun ControlScreen(
                 Text(text = if (rearDefrostOn) "Включён" else "Выключен")
                 Switch(checked = rearDefrostOn, onCheckedChange = { onRearDefrostToggle() }, enabled = connected)
             }
+        }
+
+        // Топливо (только показ)
+        FunctionCard(title = stringRes(R.string.fuel_label)) {
+            Text(text = if (fuelPercent >= 0) "$fuelPercent%" else "—")
         }
 
         AboutCard()

@@ -101,6 +101,10 @@ object CarProperties {
     /** Обогрев заднего стекла — toggle 0/1, без areaId. */
     const val DEFROST_REAR = 0x10040300
 
+    // ───── Топливо ─────
+    /** Уровень топлива в баке в процентах (сенсор, float 0..100). */
+    const val SENSOR_FUEL_PERCENTAGE = 0x404500
+
     const val SEAT_LEVEL_MAX = 3
 
     /** Декодирует прочитанное значение свойства в уровень 0..3 (auto/прочее → 0). */

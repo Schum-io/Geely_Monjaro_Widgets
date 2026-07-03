@@ -41,6 +41,14 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
     /** Ресурс иконки для активного / неактивного состояния. */
     protected abstract fun iconRes(active: Boolean): Int
 
+    /**
+     * true — сразу рисуем предполагаемое (переключённое) состояние, не перечитывая
+     * (для команд с отложенным эффектом, напр. багажник: створка едет, TRUNK_STATE
+     * меняется не сразу). false — после записи перечитываем реальное состояние
+     * (машина могла отклонить команду, напр. двигатель заглушён).
+     */
+    protected open val optimistic: Boolean = false
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -77,8 +85,11 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
     private fun applyToggle(context: Context, car: IGlyCar) {
         val active = isActive(car)
         toggle(car, active)
-        // Оптимистично отражаем переключённое состояние.
-        updateIcon(context, !active)
+        // По умолчанию показываем РЕАЛЬНОЕ состояние (если машина отклонила команду
+        // — напр. заглушённый двигатель — иконка не «загорится»). Для отложенных
+        // команд (багажник) — оптимистично.
+        val shown = if (optimistic) !active else isActive(car)
+        updateIcon(context, shown)
     }
 
     /** Читает актуальное состояние и обновляет внешний вид виджета. */

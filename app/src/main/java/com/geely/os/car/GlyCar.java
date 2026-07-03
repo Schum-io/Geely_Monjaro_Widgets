@@ -7,6 +7,7 @@ import com.ecarx.xui.adaptapi.binder.IConnectable;
 import com.ecarx.xui.adaptapi.car.Car;
 import com.ecarx.xui.adaptapi.car.ICar;
 import com.ecarx.xui.adaptapi.car.base.ICarFunction;
+import com.ecarx.xui.adaptapi.car.sensor.ISensor;
 
 public final class GlyCar {
 
@@ -94,6 +95,21 @@ public final class GlyCar {
                 return false;
             }
             return cf.setFunctionValue(propertyId, value);
+        }
+
+        @Override
+        public float getSensorValue(int sensorType) {
+            try {
+                ISensor sensor = mCar.getSensorManager();
+                if (sensor == null) {
+                    Log.w(TAG, "getSensorValue: sensor manager is null");
+                    return 0f;
+                }
+                return sensor.getSensorLatestValue(sensorType);
+            } catch (Throwable t) {
+                Log.w(TAG, "getSensorValue failed: " + t);
+                return 0f;
+            }
         }
 
         @Override
