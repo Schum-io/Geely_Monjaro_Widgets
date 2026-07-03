@@ -104,6 +104,8 @@ object CarProperties {
     // ───── Топливо ─────
     /** Уровень топлива в баке в процентах (сенсор, float 0..100). */
     const val SENSOR_FUEL_PERCENTAGE = 0x404500
+    /** Уровень топлива в баке в литрах (сенсор, float). */
+    const val SENSOR_FUEL_LEVEL = 0x100600
 
     const val SEAT_LEVEL_MAX = 3
 

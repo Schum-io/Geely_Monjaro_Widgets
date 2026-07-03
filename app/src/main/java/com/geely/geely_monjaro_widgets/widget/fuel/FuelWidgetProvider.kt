@@ -62,11 +62,14 @@ class FuelWidgetProvider : AppWidgetProvider() {
 
     private fun updatePercent(context: Context, car: IGlyCar) {
         val pct = car.getSensorValue(CarProperties.SENSOR_FUEL_PERCENTAGE)
-        val text = if (pct > 0f) "${pct.roundToInt()}%" else "—"
+        val liters = car.getSensorValue(CarProperties.SENSOR_FUEL_LEVEL)
+        val percentText = if (pct > 0f) "${pct.roundToInt()}%" else "—"
+        val litersText = if (liters > 0f) "${liters.roundToInt()} л" else ""
         val manager = AppWidgetManager.getInstance(context)
         for (id in manager.getAppWidgetIds(ComponentName(context, javaClass))) {
             val views = buildViews(context, id)
-            views.setTextViewText(R.id.fuelPercent, text)
+            views.setTextViewText(R.id.fuelPercent, percentText)
+            views.setTextViewText(R.id.fuelLiters, litersText)
             manager.updateAppWidget(id, views)
         }
     }

@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
     private val recircOn = mutableStateOf(false)
     private val rearDefrostOn = mutableStateOf(false)
     private val fuelPercent = mutableStateOf(-1)
+    private val fuelLiters = mutableStateOf(-1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +91,7 @@ class MainActivity : ComponentActivity() {
                         rearDefrostOn = rearDefrostOn.value,
                         onRearDefrostToggle = ::onRearDefrostToggle,
                         fuelPercent = fuelPercent.value,
+                        fuelLiters = fuelLiters.value,
                     )
                 }
             }
@@ -138,6 +140,8 @@ class MainActivity : ComponentActivity() {
         rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
         val fuel = c.getSensorValue(CarProperties.SENSOR_FUEL_PERCENTAGE)
         fuelPercent.value = if (fuel > 0f) Math.round(fuel) else -1
+        val liters = c.getSensorValue(CarProperties.SENSOR_FUEL_LEVEL)
+        fuelLiters.value = if (liters > 0f) Math.round(liters) else -1
     }
 
     private fun onRecircToggle() {
@@ -230,6 +234,7 @@ private fun ControlScreen(
     rearDefrostOn: Boolean,
     onRearDefrostToggle: () -> Unit,
     fuelPercent: Int,
+    fuelLiters: Int,
 ) {
     Column(
         modifier = modifier
@@ -323,7 +328,9 @@ private fun ControlScreen(
 
         // Топливо (только показ)
         FunctionCard(title = stringRes(R.string.fuel_label)) {
-            Text(text = if (fuelPercent >= 0) "$fuelPercent%" else "—")
+            val pctText = if (fuelPercent >= 0) "$fuelPercent%" else "—"
+            val text = if (fuelLiters >= 0) "$pctText · $fuelLiters л" else pctText
+            Text(text = text)
         }
 
         AboutCard()

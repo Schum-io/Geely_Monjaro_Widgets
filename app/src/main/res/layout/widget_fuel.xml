@@ -40,6 +40,15 @@
         android:textSize="22sp" />
 
     <TextView
+        android:id="@+id/fuelLiters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="@color/widget_label_text"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="15sp" />
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/fuel_label"
