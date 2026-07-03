@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val appVersionName = "1.0.2"
+val appVersionName = "1.0.3"
 
 android {
     namespace = "com.geely.geely_monjaro_widgets"
@@ -17,7 +17,7 @@ android {
         applicationId = "com.geely.geely_monjaro_widgets"
         minSdk = 28
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

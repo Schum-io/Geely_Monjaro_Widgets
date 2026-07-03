@@ -10,6 +10,7 @@ abstract class SeatVentWidgetProvider : CycleLevelWidgetProvider() {
     override val iconViewId = R.id.climateIcon
     override val propertyId = CarProperties.SEAT_VENTILATION
     override val bottomLabelRes = R.string.climate_vent
+    override val activeCircleRes = R.drawable.climate_circle_on_vent
 
     override fun iconRes(level: Int): Int = when (level) {
         1 -> R.drawable.seat_wind_level1_status

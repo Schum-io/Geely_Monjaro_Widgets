@@ -34,12 +34,13 @@ public class PsdWidgetHook implements IXposedHookLoadPackage {
     /** displayType записи для экрана пассажира (enum psd=1 в attrs.xml лаунчера). */
     private static final int DISPLAY_TYPE_PSD = 1;
 
-    private static final String OUR_PKG = "com.geely.geely_monjaro_widgets";
-    /** На экран пассажира выводим только пассажирские виджеты. */
+    /** Пакет классов приложения (namespace) — по нему строятся FQCN провайдеров. */
+    private static final String CLASS_PKG = "com.geely.geely_monjaro_widgets";
+    /** На экран пассажира выводим только пассажирские виджеты (FQCN классов). */
     private static final String[] OUR_PROVIDERS = {
-            OUR_PKG + ".widget.seat.PassengerSeatMemoryWidgetProvider",
-            OUR_PKG + ".widget.climate.PassengerSeatHeatWidgetProvider",
-            OUR_PKG + ".widget.climate.PassengerSeatVentWidgetProvider",
+            CLASS_PKG + ".widget.seat.PassengerSeatMemoryWidgetProvider",
+            CLASS_PKG + ".widget.climate.PassengerSeatHeatWidgetProvider",
+            CLASS_PKG + ".widget.climate.PassengerSeatVentWidgetProvider",
     };
 
     @Override
@@ -87,7 +88,7 @@ public class PsdWidgetHook implements IXposedHookLoadPackage {
             }
             try {
                 Object entity = entityCls.newInstance();
-                XposedHelpers.setObjectField(entity, "packageName", OUR_PKG);
+                XposedHelpers.setObjectField(entity, "packageName", CLASS_PKG);
                 XposedHelpers.setObjectField(entity, "className", provider);
                 XposedHelpers.setIntField(entity, "displayType", DISPLAY_TYPE_PSD);
                 list.add(entity);

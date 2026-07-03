@@ -42,6 +42,9 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
     /** Ресурс иконки для уровня 0..3. */
     protected abstract fun iconRes(level: Int): Int
 
+    /** Круг-индикатор активного состояния (по умолчанию оранжевый). */
+    protected open val activeCircleRes: Int = R.drawable.climate_circle_on
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -57,17 +60,31 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == actionName) {
-            val pendingResult = goAsync()
-            withCar(context, onDone = { pendingResult.finish() }) { car ->
-                val current = CarProperties.decodeSeatLevel(readEncoded(car))
-                val next = CarProperties.nextSeatLevel(current)
-                writeEncoded(car, CarProperties.encodeSeatLevel(propertyId, next))
-                // Показываем РЕАЛЬНОЕ состояние, а не предполагаемое: если машина
-                // отклонила команду (напр. двигатель заглушён), уровень не изменится.
-                updateIcon(context, CarProperties.decodeSeatLevel(readEncoded(car)))
+        if (intent.action != actionName) return
+
+        // Быстрый путь: живое соединение сервиса — без переподключения.
+        val live = CarStateService.liveCar
+        if (live != null) {
+            try {
+                applyCycle(context, live)
+            } catch (_: Throwable) {
             }
+            return
         }
+        // Запасной путь: разовое подключение.
+        val pendingResult = goAsync()
+        withCar(context, onDone = { pendingResult.finish() }) { car ->
+            applyCycle(context, car)
+        }
+    }
+
+    private fun applyCycle(context: Context, car: IGlyCar) {
+        val current = CarProperties.decodeSeatLevel(readEncoded(car))
+        val next = CarProperties.nextSeatLevel(current)
+        writeEncoded(car, CarProperties.encodeSeatLevel(propertyId, next))
+        // Показываем РЕАЛЬНОЕ состояние, а не предполагаемое: если машина
+        // отклонила команду (напр. двигатель заглушён), уровень не изменится.
+        updateIcon(context, CarProperties.decodeSeatLevel(readEncoded(car)))
     }
 
     private fun refreshLevel(context: Context) {
@@ -91,7 +108,7 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val thisWidget = ComponentName(context, javaClass)
         val bitmap = drawableToBitmap(context.getDrawable(iconRes(level))!!)
-        val circleRes = if (level > 0) R.drawable.climate_circle_on else R.drawable.climate_circle_off
+        val circleRes = if (level > 0) activeCircleRes else R.drawable.climate_circle_off
         for (id in appWidgetManager.getAppWidgetIds(thisWidget)) {
             val views = buildViews(context, id)
             views.setImageViewBitmap(iconViewId, bitmap)
@@ -112,15 +129,14 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
         return views
     }
 
-    private fun cyclePendingIntent(context: Context, requestCode: Int): PendingIntent {
-        val intent = Intent(context, javaClass).apply { action = actionName }
-        return PendingIntent.getBroadcast(
+    private fun cyclePendingIntent(context: Context, requestCode: Int): PendingIntent =
+        CarStateService.actionPendingIntent(
             context,
             requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            javaClass,
+            actionName,
+            uniqueTag = "$actionName/$requestCode",
         )
-    }
 
     private fun drawableToBitmap(drawable: Drawable): Bitmap {
         val size = 192

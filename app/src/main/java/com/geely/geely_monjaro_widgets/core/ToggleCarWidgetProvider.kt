@@ -56,15 +56,29 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == actionName) {
-            val pendingResult = goAsync()
-            withCar(context, onDone = { pendingResult.finish() }) { car ->
-                val active = isActive(car)
-                toggle(car, active)
-                // Оптимистично отражаем переключённое состояние.
-                updateIcon(context, !active)
+        if (intent.action != actionName) return
+
+        // Быстрый путь: живое соединение сервиса — без переподключения.
+        val live = CarStateService.liveCar
+        if (live != null) {
+            try {
+                applyToggle(context, live)
+            } catch (_: Throwable) {
             }
+            return
         }
+        // Запасной путь: разовое подключение.
+        val pendingResult = goAsync()
+        withCar(context, onDone = { pendingResult.finish() }) { car ->
+            applyToggle(context, car)
+        }
+    }
+
+    private fun applyToggle(context: Context, car: IGlyCar) {
+        val active = isActive(car)
+        toggle(car, active)
+        // Оптимистично отражаем переключённое состояние.
+        updateIcon(context, !active)
     }
 
     /** Читает актуальное состояние и обновляет внешний вид виджета. */
@@ -91,15 +105,14 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
         return views
     }
 
-    private fun togglePendingIntent(context: Context, requestCode: Int): PendingIntent {
-        val intent = Intent(context, javaClass).apply { action = actionName }
-        return PendingIntent.getBroadcast(
+    private fun togglePendingIntent(context: Context, requestCode: Int): PendingIntent =
+        CarStateService.actionPendingIntent(
             context,
             requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            javaClass,
+            actionName,
+            uniqueTag = "$actionName/$requestCode",
         )
-    }
 
     private fun drawableToBitmap(drawable: Drawable): Bitmap {
         val size = 192

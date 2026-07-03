@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.widget.RemoteViews
 import com.geely.geely_monjaro_widgets.core.CarProperties
 import com.geely.geely_monjaro_widgets.core.withCar
@@ -82,6 +83,20 @@ abstract class SeatMemoryWidgetProvider : AppWidgetProvider() {
                 .updateAppWidget(appWidgetId, buildViews(context, appWidgetId))
         }
 
+        // Быстрый путь: живое соединение сервиса — без переподключения.
+        val live = CarStateService.liveCar
+        if (live != null) {
+            try {
+                live.setIntProperty(
+                    CarProperties.SEAT_POSITION_RESTORE,
+                    areaId,
+                    CarProperties.seatProfileValue(profileIndex)
+                )
+            } catch (_: Throwable) {
+            }
+            return
+        }
+        // Запасной путь: разовое подключение.
         val pendingResult = goAsync()
         withCar(context, onDone = { pendingResult.finish() }) { car ->
             car.setIntProperty(
@@ -121,16 +136,17 @@ abstract class SeatMemoryWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         profileIndex: Int
     ): PendingIntent {
-        val intent = Intent(context, javaClass).apply {
-            action = "$actionPrefix.$profileIndex"
-            putExtra(EXTRA_PROFILE_INDEX, profileIndex)
-            putExtra(EXTRA_WIDGET_ID, appWidgetId)
+        val extras = Bundle().apply {
+            putInt(EXTRA_PROFILE_INDEX, profileIndex)
+            putInt(EXTRA_WIDGET_ID, appWidgetId)
         }
-        return PendingIntent.getBroadcast(
+        return CarStateService.actionPendingIntent(
             context,
             appWidgetId * 10 + profileIndex,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            javaClass,
+            "$actionPrefix.$profileIndex",
+            uniqueTag = "$actionPrefix/$appWidgetId/$profileIndex",
+            extras = extras,
         )
     }
 
