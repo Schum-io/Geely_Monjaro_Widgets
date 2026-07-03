@@ -14,7 +14,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.geely.geely_monjaro_widgets"
+        // whitelisted-имя ECARX (verifyWhiteApp) — для доступа к машине на строгих
+        // прошивках (Monjaro SE). Пакет классов (namespace) остаётся прежним.
+        applicationId = "com.geely.gc.cloudautoclient"
         minSdk = 28
         targetSdk = 36
         versionCode = 4

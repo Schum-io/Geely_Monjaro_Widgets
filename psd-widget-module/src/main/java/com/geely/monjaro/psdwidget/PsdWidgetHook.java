@@ -35,6 +35,9 @@ public class PsdWidgetHook implements IXposedHookLoadPackage {
     private static final int DISPLAY_TYPE_PSD = 1;
 
     /** Пакет классов приложения (namespace) — по нему строятся FQCN провайдеров. */
+    /** Установленный пакет приложения (applicationId). */
+    private static final String APP_ID = "com.geely.gc.cloudautoclient";
+    /** Пакет классов (namespace) — по нему строятся FQCN провайдеров. */
     private static final String CLASS_PKG = "com.geely.geely_monjaro_widgets";
     /** На экран пассажира выводим только пассажирские виджеты (FQCN классов). */
     private static final String[] OUR_PROVIDERS = {
@@ -88,7 +91,7 @@ public class PsdWidgetHook implements IXposedHookLoadPackage {
             }
             try {
                 Object entity = entityCls.newInstance();
-                XposedHelpers.setObjectField(entity, "packageName", CLASS_PKG);
+                XposedHelpers.setObjectField(entity, "packageName", APP_ID);
                 XposedHelpers.setObjectField(entity, "className", provider);
                 XposedHelpers.setIntField(entity, "displayType", DISPLAY_TYPE_PSD);
                 list.add(entity);
