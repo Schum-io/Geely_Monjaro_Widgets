@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
     private val ventPassengerLevel = mutableStateOf(0)
     private val steeringHeatLevel = mutableStateOf(0)
     private val recircOn = mutableStateOf(false)
+    private val rearDefrostOn = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +86,8 @@ class MainActivity : ComponentActivity() {
                         onHeatSteering = ::cycleSteeringHeat,
                         recircOn = recircOn.value,
                         onRecircToggle = ::onRecircToggle,
+                        rearDefrostOn = rearDefrostOn.value,
+                        onRearDefrostToggle = ::onRearDefrostToggle,
                     )
                 }
             }
@@ -130,6 +133,7 @@ class MainActivity : ComponentActivity() {
             CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING))
         recircOn.value =
             c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
+        rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
     }
 
     private fun onRecircToggle() {
@@ -141,6 +145,13 @@ class MainActivity : ComponentActivity() {
         )
         recircOn.value =
             c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
+    }
+
+    private fun onRearDefrostToggle() {
+        val c = car ?: return
+        val active = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
+        c.setIntProperty(CarProperties.DEFROST_REAR, if (active) 0 else 1)
+        rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
     }
 
     private fun cycleSteeringHeat() {
@@ -212,6 +223,8 @@ private fun ControlScreen(
     onHeatSteering: () -> Unit,
     recircOn: Boolean,
     onRecircToggle: () -> Unit,
+    rearDefrostOn: Boolean,
+    onRearDefrostToggle: () -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -288,6 +301,18 @@ private fun ControlScreen(
             ) {
                 Text(text = if (recircOn) "Включена" else "Выключена")
                 Switch(checked = recircOn, onCheckedChange = { onRecircToggle() }, enabled = connected)
+            }
+        }
+
+        // Обогрев заднего стекла
+        FunctionCard(title = stringRes(R.string.rear_defrost_label)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = if (rearDefrostOn) "Включён" else "Выключен")
+                Switch(checked = rearDefrostOn, onCheckedChange = { onRearDefrostToggle() }, enabled = connected)
             }
         }
 

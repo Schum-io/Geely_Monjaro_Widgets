@@ -21,6 +21,7 @@ import com.geely.geely_monjaro_widgets.widget.climate.DriverSeatHeatWidgetProvid
 import com.geely.geely_monjaro_widgets.widget.climate.DriverSeatVentWidgetProvider
 import com.geely.geely_monjaro_widgets.widget.climate.PassengerSeatHeatWidgetProvider
 import com.geely.geely_monjaro_widgets.widget.climate.PassengerSeatVentWidgetProvider
+import com.geely.geely_monjaro_widgets.widget.climate.RearDefrostWidgetProvider
 import com.geely.geely_monjaro_widgets.widget.climate.RecirculationWidgetProvider
 import com.geely.geely_monjaro_widgets.widget.climate.SteeringWheelHeatWidgetProvider
 import com.geely.geely_monjaro_widgets.widget.seat.DriverSeatMemoryWidgetProvider
@@ -53,6 +54,7 @@ class CarStateService : Service() {
         CarProperties.STEERING_WHEEL_HEATING,
         CarProperties.SEAT_POSITION_RESTORE,
         CarProperties.AIR_CIRCULATION,
+        CarProperties.DEFROST_REAR,
     )
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -126,6 +128,7 @@ class CarStateService : Service() {
         )
         CarProperties.STEERING_WHEEL_HEATING -> listOf(SteeringWheelHeatWidgetProvider::class.java)
         CarProperties.AIR_CIRCULATION -> listOf(RecirculationWidgetProvider::class.java)
+        CarProperties.DEFROST_REAR -> listOf(RearDefrostWidgetProvider::class.java)
         CarProperties.SEAT_POSITION_RESTORE -> listOf(
             DriverSeatMemoryWidgetProvider::class.java,
             PassengerSeatMemoryWidgetProvider::class.java,
