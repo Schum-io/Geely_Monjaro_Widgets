@@ -8,6 +8,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Цвет подписей виджетов: тёмный на светлой карточке днём, белый ночью -->
-    <color name="widget_label_text">#FF2D3035</color>
+    <!-- Цвет подписей виджетов: белый (фон карточки тёмный в обеих темах) -->
+    <color name="widget_label_text">#FFFFFFFF</color>
 </resources>
