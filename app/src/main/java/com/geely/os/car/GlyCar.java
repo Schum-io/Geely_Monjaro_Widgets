@@ -7,6 +7,7 @@ import com.ecarx.xui.adaptapi.binder.IConnectable;
 import com.ecarx.xui.adaptapi.car.Car;
 import com.ecarx.xui.adaptapi.car.ICar;
 import com.ecarx.xui.adaptapi.car.base.ICarFunction;
+import com.ecarx.xui.adaptapi.car.sensor.ISensor;
 
 public final class GlyCar {
 
@@ -29,6 +30,7 @@ public final class GlyCar {
         private final ICar mCar;
         private volatile ICarFunction mCarFunction;
         private volatile ICarFunction.IFunctionValueWatcher mWatcher;
+        private volatile ISensor.ISensorListener mSensorListener;
 
         Bridge(ICar car, ConnectionListener listener) {
             mCar = car;
@@ -97,6 +99,61 @@ public final class GlyCar {
         }
 
         @Override
+        public float getSensorValue(int sensorType) {
+            try {
+                ISensor sensor = mCar.getSensorManager();
+                if (sensor == null) {
+                    Log.w(TAG, "getSensorValue: sensor manager is null");
+                    return 0f;
+                }
+                return sensor.getSensorLatestValue(sensorType);
+            } catch (Throwable t) {
+                Log.w(TAG, "getSensorValue failed: " + t);
+                return 0f;
+            }
+        }
+
+        @Override
+        public float getFuelTankCapacityLiters() {
+            try {
+                com.ecarx.xui.adaptapi.car.base.ICarInfo info = mCar.getCarInfoManager();
+                if (info == null) {
+                    return 0f;
+                }
+                float raw = info.getCarInfoFloat(
+                        com.ecarx.xui.adaptapi.car.base.ICarInfo.FLT_INFO_FUEL_CAPACITY);
+                if (raw <= 0f) {
+                    return 0f;
+                }
+                // Часть платформ отдаёт миллилитры — нормализуем в литры.
+                float liters = raw > 200f ? raw / 1000f : raw;
+                // Санити: разумный объём бака 20..150 л, иначе считаем значение недостоверным.
+                if (liters < 20f || liters > 150f) {
+                    return 0f;
+                }
+                return liters;
+            } catch (Throwable t) {
+                Log.w(TAG, "getFuelTankCapacityLiters failed: " + t);
+                return 0f;
+            }
+        }
+
+        @Override
+        public boolean isFunctionActive(int propertyId) {
+            ICarFunction cf = mCarFunction;
+            if (cf == null) {
+                return false;
+            }
+            try {
+                Object status = cf.isFunctionSupported(propertyId);
+                return status != null && "active".equalsIgnoreCase(String.valueOf(status));
+            } catch (Throwable t) {
+                Log.w(TAG, "isFunctionActive failed: " + t);
+                return false;
+            }
+        }
+
+        @Override
         public boolean registerValueWatcher(int[] propertyIds, final GlyCarValueWatcher watcher) {
             ICarFunction cf = mCarFunction;
             if (cf == null || watcher == null) {
@@ -140,6 +197,61 @@ public final class GlyCar {
                 cf.unregisterFunctionValueWatcher(w);
             }
             mWatcher = null;
+        }
+
+        @Override
+        public boolean registerSensorWatcher(int[] sensorTypes, final GlyCarSensorWatcher watcher) {
+            if (watcher == null || sensorTypes == null) {
+                return false;
+            }
+            ISensor sensor = mCar.getSensorManager();
+            if (sensor == null) {
+                Log.w(TAG, "registerSensorWatcher: sensor manager is null");
+                return false;
+            }
+            ISensor.ISensorListener listener = new ISensor.ISensorListener() {
+                @Override
+                public void onSensorValueChanged(int sensorType, float value) {
+                    watcher.onSensorChanged(sensorType, value);
+                }
+
+                @Override
+                public void onSensorEventChanged(int sensorType, int event) {
+                }
+
+                @Override
+                public void onSensorSupportChanged(int sensorType,
+                        com.ecarx.xui.adaptapi.FunctionStatus status) {
+                }
+            };
+            boolean ok = true;
+            try {
+                for (int sensorType : sensorTypes) {
+                    ok &= sensor.registerListener(listener, sensorType);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "registerSensorWatcher failed: " + t);
+                return false;
+            }
+            mSensorListener = listener;
+            return ok;
+        }
+
+        @Override
+        public void unregisterSensorWatcher() {
+            ISensor.ISensorListener listener = mSensorListener;
+            if (listener == null) {
+                return;
+            }
+            try {
+                ISensor sensor = mCar.getSensorManager();
+                if (sensor != null) {
+                    sensor.unregisterListener(listener);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "unregisterSensorWatcher failed: " + t);
+            }
+            mSensorListener = null;
         }
 
         @Override

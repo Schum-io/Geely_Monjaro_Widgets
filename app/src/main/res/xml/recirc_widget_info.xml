@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_recirc"
+    android:previewLayout="@layout/widget_recirc"
+    android:previewImage="@drawable/ic_ac_cycle_inner"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

@@ -58,6 +58,51 @@ class CarPropertiesTest {
     }
 
     @Test
+    fun cycle_with_only_level_3_is_off_3_off() {
+        val enabled = setOf(3)
+        assertEquals(3, CarProperties.nextSeatLevel(0, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(3, enabled))
+    }
+
+    @Test
+    fun cycle_with_levels_3_and_1_is_off_3_1_off() {
+        val enabled = setOf(3, 1)
+        assertEquals(3, CarProperties.nextSeatLevel(0, enabled))
+        assertEquals(1, CarProperties.nextSeatLevel(3, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(1, enabled))
+    }
+
+    @Test
+    fun cycle_with_only_level_2_is_off_2_off() {
+        val enabled = setOf(2)
+        assertEquals(2, CarProperties.nextSeatLevel(0, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(2, enabled))
+    }
+
+    @Test
+    fun cycle_with_all_levels_is_off_3_2_1_off() {
+        val enabled = setOf(1, 2, 3)
+        assertEquals(3, CarProperties.nextSeatLevel(0, enabled))
+        assertEquals(2, CarProperties.nextSeatLevel(3, enabled))
+        assertEquals(1, CarProperties.nextSeatLevel(2, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(1, enabled))
+    }
+
+    @Test
+    fun cycle_with_empty_set_always_off() {
+        val enabled = emptySet<Int>()
+        assertEquals(0, CarProperties.nextSeatLevel(0, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(3, enabled))
+        assertEquals(0, CarProperties.nextSeatLevel(1, enabled))
+    }
+
+    @Test
+    fun cycle_when_current_level_not_enabled_goes_off() {
+        // Режим 2 был активен, но 2 отключили (включён только 3) → следующий OFF.
+        assertEquals(0, CarProperties.nextSeatLevel(2, setOf(3)))
+    }
+
+    @Test
     fun seat_level_encode_matches_reversed_values() {
         // Подогрев
         assertEquals(0x0, CarProperties.encodeSeatLevel(CarProperties.SEAT_HEATING, 0))

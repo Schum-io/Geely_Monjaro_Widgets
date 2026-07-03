@@ -8,6 +8,8 @@ public interface ICarFunction {
     boolean setFunctionValue(int propertyId, int value);
     boolean setFunctionValue(int propertyId, int areaId, int value);
 
+    FunctionStatus isFunctionSupported(int propertyId);
+
     boolean registerFunctionValueWatcher(int[] propertyIds, IFunctionValueWatcher watcher);
     boolean unregisterFunctionValueWatcher(IFunctionValueWatcher watcher);
 

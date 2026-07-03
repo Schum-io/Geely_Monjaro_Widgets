@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Активный круг вентиляции — цвет как в штатном Hvac (seat_wind_status_bg_open) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#b348b5a5" />
+</shape>

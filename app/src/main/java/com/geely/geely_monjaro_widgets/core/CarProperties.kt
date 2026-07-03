@@ -91,6 +91,38 @@ object CarProperties {
     const val STEERING_WHEEL_HEATING = 0x10090100
     // areaId сидений — те же, что у памяти: AREA_SEAT_DRIVER (0x1) / AREA_SEAT_PASSENGER (0x4)
 
+    // ───── Рециркуляция воздуха ─────
+    /** Рециркуляция — одна зона (без areaId). */
+    const val AIR_CIRCULATION = 0x10030100
+    const val CIRCULATION_INNER = 0x10030101   // рециркуляция (закрытый контур)
+    const val CIRCULATION_OUTSIDE = 0x10030102 // забор наружного воздуха
+
+    // ───── Обогрев заднего стекла ─────
+    /** Обогрев заднего стекла — toggle 0/1, без areaId. */
+    const val DEFROST_REAR = 0x10040300
+
+    // ───── Топливо ─────
+    /** Уровень топлива в баке в процентах (сенсор, float 0..100). */
+    const val SENSOR_FUEL_PERCENTAGE = 0x404500
+    /** Уровень топлива в баке в литрах (сенсор, float). На части машин = 0. */
+    const val SENSOR_FUEL_LEVEL = 0x100600
+    /** Запасной объём бака (л) — если машина не сообщает ёмкость через ICarInfo. */
+    const val FUEL_TANK_CAPACITY_L = 55f
+
+    /**
+     * Литры топлива: берём сенсор литров, если он даёт вменяемое значение, иначе
+     * вычисляем из процентов × объём бака. Ёмкость [tankCapacityL] берётся из машины
+     * (ICarInfo); если 0/недоступна — используется запасная константа [FUEL_TANK_CAPACITY_L].
+     */
+    fun fuelLiters(litersSensor: Float, percent: Float, tankCapacityL: Float = FUEL_TANK_CAPACITY_L): Float {
+        val capacity = if (tankCapacityL > 0f) tankCapacityL else FUEL_TANK_CAPACITY_L
+        return when {
+            litersSensor > 1f -> litersSensor
+            percent > 0f -> percent / 100f * capacity
+            else -> 0f
+        }
+    }
+
     const val SEAT_LEVEL_MAX = 3
 
     /** Декодирует прочитанное значение свойства в уровень 0..3 (auto/прочее → 0). */
@@ -104,11 +136,20 @@ object CarProperties {
     fun encodeSeatLevel(propertyBase: Int, level: Int): Int =
         if (level <= 0) 0 else propertyBase or (level and 0xF)
 
-    /** Следующий уровень по циклу штатной кнопки: OFF → 3 → 2 → 1 → OFF. */
-    fun nextSeatLevel(level: Int): Int = when (level) {
-        0 -> 3
-        3 -> 2
-        2 -> 1
-        else -> 0
+    /**
+     * Следующий уровень по циклу кнопки. По включённым режимам [enabled] (подмножество
+     * {1,2,3}) обход идёт по убыванию, как у штатной кнопки Geely: OFF → max → … → min → OFF.
+     * По умолчанию включены все три уровня (штатное поведение OFF→3→2→1→OFF).
+     *
+     * Если текущий уровень не входит в [enabled] (напр. режим отключили, пока он активен)
+     * или набор пуст — следующим будет OFF.
+     */
+    fun nextSeatLevel(level: Int, enabled: Set<Int> = setOf(1, 2, 3)): Int {
+        val order = enabled.filter { it in 1..SEAT_LEVEL_MAX }.sortedDescending()
+        if (order.isEmpty()) return 0
+        if (level == 0) return order.first()
+        val idx = order.indexOf(level)
+        if (idx == -1) return 0
+        return order.getOrElse(idx + 1) { 0 }
     }
 }

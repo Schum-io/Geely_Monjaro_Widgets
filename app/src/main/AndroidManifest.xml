@@ -137,6 +137,42 @@
                 android:resource="@xml/heat_steering_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.climate.RecirculationWidgetProvider"
+            android:exported="false"
+            android:label="@string/recirc_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/recirc_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.climate.RearDefrostWidgetProvider"
+            android:exported="false"
+            android:label="@string/rear_defrost_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/rear_defrost_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.fuel.FuelWidgetProvider"
+            android:exported="false"
+            android:label="@string/fuel_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fuel_widget_info" />
+        </receiver>
+
         <service
             android:name=".service.CarStateService"
             android:exported="false"

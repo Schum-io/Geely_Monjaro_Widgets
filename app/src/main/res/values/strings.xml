@@ -31,6 +31,11 @@
     <string name="climate_heat">Подогрев</string>
     <string name="climate_vent">Вентиляция</string>
     <string name="climate_steering">Руль</string>
+    <string name="recirc_label">Рециркуляция</string>
+    <string name="recirc_widget_content_description">Переключить рециркуляцию воздуха</string>
+    <string name="rear_defrost_label">Обогрев заднего стекла</string>
+    <string name="rear_defrost_widget_content_description">Переключить обогрев заднего стекла</string>
+    <string name="fuel_label">Топливо</string>
 
     <!-- О приложении -->
     <string name="about_title">О приложении</string>

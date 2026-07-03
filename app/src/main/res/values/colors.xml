@@ -8,6 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Цвет подписей виджетов: тёмный на светлой карточке днём, белый ночью -->
+    <!-- Цвет подписей виджетов (светлая тема): тёмный — фон карточки светлый.
+         В тёмной теме переопределяется на белый в values-night/colors.xml. -->
     <color name="widget_label_text">#FF2D3035</color>
 </resources>
