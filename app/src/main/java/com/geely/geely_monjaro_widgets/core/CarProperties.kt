@@ -91,6 +91,12 @@ object CarProperties {
     const val STEERING_WHEEL_HEATING = 0x10090100
     // areaId сидений — те же, что у памяти: AREA_SEAT_DRIVER (0x1) / AREA_SEAT_PASSENGER (0x4)
 
+    // ───── Рециркуляция воздуха ─────
+    /** Рециркуляция — одна зона (без areaId). */
+    const val AIR_CIRCULATION = 0x10030100
+    const val CIRCULATION_INNER = 0x10030101   // рециркуляция (закрытый контур)
+    const val CIRCULATION_OUTSIDE = 0x10030102 // забор наружного воздуха
+
     const val SEAT_LEVEL_MAX = 3
 
     /** Декодирует прочитанное значение свойства в уровень 0..3 (auto/прочее → 0). */

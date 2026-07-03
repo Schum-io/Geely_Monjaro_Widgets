@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private val ventDriverLevel = mutableStateOf(0)
     private val ventPassengerLevel = mutableStateOf(0)
     private val steeringHeatLevel = mutableStateOf(0)
+    private val recircOn = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +83,8 @@ class MainActivity : ComponentActivity() {
                         onVentPassenger = { cycleClimate(CarProperties.SEAT_VENTILATION, CarProperties.AREA_SEAT_PASSENGER, ventPassengerLevel) },
                         steeringHeatLevel = steeringHeatLevel.value,
                         onHeatSteering = ::cycleSteeringHeat,
+                        recircOn = recircOn.value,
+                        onRecircToggle = ::onRecircToggle,
                     )
                 }
             }
@@ -125,6 +128,19 @@ class MainActivity : ComponentActivity() {
             CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.SEAT_VENTILATION, CarProperties.AREA_SEAT_PASSENGER))
         steeringHeatLevel.value =
             CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING))
+        recircOn.value =
+            c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
+    }
+
+    private fun onRecircToggle() {
+        val c = car ?: return
+        val active = c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
+        c.setIntProperty(
+            CarProperties.AIR_CIRCULATION,
+            if (active) CarProperties.CIRCULATION_OUTSIDE else CarProperties.CIRCULATION_INNER
+        )
+        recircOn.value =
+            c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
     }
 
     private fun cycleSteeringHeat() {
@@ -194,6 +210,8 @@ private fun ControlScreen(
     onVentPassenger: () -> Unit,
     steeringHeatLevel: Int,
     onHeatSteering: () -> Unit,
+    recircOn: Boolean,
+    onRecircToggle: () -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -259,6 +277,18 @@ private fun ControlScreen(
         }
         FunctionCard(title = stringRes(R.string.heat_steering_label)) {
             ClimateRow(enabled = connected, level = steeringHeatLevel, onCycle = onHeatSteering)
+        }
+
+        // Рециркуляция
+        FunctionCard(title = stringRes(R.string.recirc_label)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = if (recircOn) "Включена" else "Выключена")
+                Switch(checked = recircOn, onCheckedChange = { onRecircToggle() }, enabled = connected)
+            }
         }
 
         AboutCard()

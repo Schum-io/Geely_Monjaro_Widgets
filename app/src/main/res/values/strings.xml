@@ -31,6 +31,8 @@
     <string name="climate_heat">Подогрев</string>
     <string name="climate_vent">Вентиляция</string>
     <string name="climate_steering">Руль</string>
+    <string name="recirc_label">Рециркуляция</string>
+    <string name="recirc_widget_content_description">Переключить рециркуляцию воздуха</string>
 
     <!-- О приложении -->
     <string name="about_title">О приложении</string>
