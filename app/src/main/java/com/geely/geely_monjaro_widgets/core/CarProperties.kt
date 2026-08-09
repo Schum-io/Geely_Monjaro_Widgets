@@ -106,21 +106,27 @@ object CarProperties {
     const val SENSOR_FUEL_PERCENTAGE = 0x404500
     /** Уровень топлива в баке в литрах (сенсор, float). На части машин = 0. */
     const val SENSOR_FUEL_LEVEL = 0x100600
-    /** Запасной объём бака (л) — если машина не сообщает ёмкость через ICarInfo. */
-    const val FUEL_TANK_CAPACITY_L = 55f
+    /** Физический объём бака (л) — показывается при 100%. Запасная константа, если ICarInfo не отдаёт инфо. */
+    const val FUEL_TANK_CAPACITY_L = 62f
+    /**
+     * Калибровка: гейдж 0→100% соответствует ~55 л реального движения топлива
+     */
+    const val FUEL_GAUGE_SPAN_L = 55f
 
     /**
-     * Литры топлива: берём сенсор литров, если он даёт вменяемое значение, иначе
-     * вычисляем из процентов × объём бака. Ёмкость [tankCapacityL] берётся из машины
-     * (ICarInfo); если 0/недоступна — используется запасная константа [FUEL_TANK_CAPACITY_L].
+     * Литры топлива в баке. Если сенсор литров даёт вменяемое значение — берём его.
+     * Иначе линейная модель с резервом: `reserve + проценты/100 × span`, где
+     * span = [FUEL_GAUGE_SPAN_L] (калибр наклона), reserve = ёмкость − span. Так при 100%
+     * выходит физический объём бака, а приросты между процентами совпадают с реальными
+     * доливами (наклон ~0.55 л/%). Ёмкость [tankCapacityL] — из машины (ICarInfo);
+     * если 0/недоступна — запасная [FUEL_TANK_CAPACITY_L].
      */
     fun fuelLiters(litersSensor: Float, percent: Float, tankCapacityL: Float = FUEL_TANK_CAPACITY_L): Float {
+        if (litersSensor > 1f) return litersSensor
+        if (percent <= 0f) return 0f
         val capacity = if (tankCapacityL > 0f) tankCapacityL else FUEL_TANK_CAPACITY_L
-        return when {
-            litersSensor > 1f -> litersSensor
-            percent > 0f -> percent / 100f * capacity
-            else -> 0f
-        }
+        val reserve = (capacity - FUEL_GAUGE_SPAN_L).coerceAtLeast(0f)
+        return reserve + percent / 100f * FUEL_GAUGE_SPAN_L
     }
 
     const val SEAT_LEVEL_MAX = 3
