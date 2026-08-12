@@ -10,6 +10,9 @@ public interface ICarFunction {
 
     FunctionStatus isFunctionSupported(int propertyId);
 
+    /** Перегрузка с зоной — статус функции для конкретного места (напр. сиденья). */
+    FunctionStatus isFunctionSupported(int propertyId, int areaId);
+
     boolean registerFunctionValueWatcher(int[] propertyIds, IFunctionValueWatcher watcher);
     boolean unregisterFunctionValueWatcher(IFunctionValueWatcher watcher);
 

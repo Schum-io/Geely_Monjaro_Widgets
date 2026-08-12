@@ -14,6 +14,10 @@ class SteeringWheelHeatWidgetProvider : CycleLevelWidgetProvider() {
     override val topLabelRes = R.string.climate_steering
     override val bottomLabelRes = R.string.climate_heat
 
+    // Отдельной кнопки AUTO у руля нет. Если API вернул служебное значение 0x1009010F,
+    // следующее нажатие сбрасывает его в OFF.
+    override val autoExitsToOff = true
+
     override fun iconRes(level: Int): Int = when (level) {
         1 -> R.drawable.steering_wheel_status_level1
         2 -> R.drawable.steering_wheel_status_level2

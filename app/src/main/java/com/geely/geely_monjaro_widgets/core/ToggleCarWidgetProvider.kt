@@ -16,8 +16,8 @@ import com.geely.os.car.IGlyCar
 
 /**
  * Базовый класс для виджетов-переключателей (одна иконка-кнопка, toggle одного
- * состояния машины). Инкапсулирует весь шаблон: RemoteViews, PendingIntent,
- * goAsync(), короткоживущее соединение через [withCar] и обновление иконки.
+ * состояния машины). Инкапсулирует шаблон: RemoteViews, PendingIntent, отправку
+ * команды через [CarCommand] и обновление иконки.
  *
  * Подкласс задаёт лишь привязку к ресурсам и логику конкретного свойства.
  */
@@ -32,22 +32,24 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
     /** Уникальное имя action для PendingIntent данного виджета. */
     protected abstract val actionName: String
 
-    /** Активно ли состояние сейчас (читает свойство машины). */
+    /** Включено ли состояние сейчас — по «сырому» значению свойства. */
     protected abstract fun isActive(car: IGlyCar): Boolean
 
-    /** Выполнить переключение, зная текущее состояние [currentlyActive]. */
-    protected abstract fun toggle(car: IGlyCar, currentlyActive: Boolean)
+    /**
+     * Выполнить переключение, зная текущее состояние [currentlyActive].
+     * Возвращает ответ машины: false = команду не приняли, её нужно повторить.
+     */
+    protected abstract fun toggle(car: IGlyCar, currentlyActive: Boolean): Boolean
 
     /** Ресурс иконки для активного / неактивного состояния. */
     protected abstract fun iconRes(active: Boolean): Int
 
     /**
-     * true — сразу рисуем предполагаемое (переключённое) состояние, не перечитывая
-     * (для команд с отложенным эффектом, напр. багажник: створка едет, TRUNK_STATE
-     * меняется не сразу). false — после записи перечитываем реальное состояние
-     * (машина могла отклонить команду, напр. двигатель заглушён).
+     * Доступна ли функция физически прямо сейчас. По умолчанию да; переопределяется
+     * там, где машина принимает запись, но эффекта не будет (напр. обогрев стекла на
+     * заглушённом двигателе) — иначе виджет «загорится», а функция не отработает.
      */
-    protected open val optimistic: Boolean = false
+    protected open fun isAvailable(car: IGlyCar): Boolean = true
 
     override fun onUpdate(
         context: Context,
@@ -66,35 +68,24 @@ abstract class ToggleCarWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action != actionName) return
 
-        // Быстрый путь: живое соединение сервиса — без переподключения.
-        val live = CarStateService.liveCar
-        if (live != null) {
-            try {
-                applyToggle(context, live)
-            } catch (_: Throwable) {
-            }
-            return
-        }
-        // Запасной путь: разовое подключение.
-        val pendingResult = goAsync()
-        withCar(context, onDone = { pendingResult.finish() }) { car ->
-            applyToggle(context, car)
-        }
-    }
-
-    private fun applyToggle(context: Context, car: IGlyCar) {
-        val active = isActive(car)
-        toggle(car, active)
-        // По умолчанию показываем РЕАЛЬНОЕ состояние (если машина отклонила команду
-        // — напр. заглушённый двигатель — иконка не «загорится»). Для отложенных
-        // команд (багажник) — оптимистично.
-        val shown = if (optimistic) !active else isActive(car)
-        updateIcon(context, shown)
+        CarCommand.run(
+            context = context,
+            pendingResult = goAsync(),
+            action = { car ->
+                val active = isActive(car)
+                // Доступность проверяем после записи: на заглушённой машине свойство
+                // запись принимает, но физически функция не отработает.
+                if (toggle(car, active)) isAvailable(car) && !active else null
+            },
+            onSuccess = { shown -> updateIcon(context, shown) },
+        )
     }
 
     /** Читает актуальное состояние и обновляет внешний вид виджета. */
     private fun refreshState(context: Context) {
-        withCar(context) { car -> updateIcon(context, isActive(car)) }
+        CarCommand.read(context) { car ->
+            updateIcon(context, isAvailable(car) && isActive(car))
+        }
     }
 
     private fun updateIcon(context: Context, active: Boolean) {

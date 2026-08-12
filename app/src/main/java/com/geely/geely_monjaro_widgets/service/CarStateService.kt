@@ -14,6 +14,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import com.geely.geely_monjaro_widgets.R
 import com.geely.geely_monjaro_widgets.core.CarProperties
@@ -47,23 +48,14 @@ class CarStateService : Service() {
 
     private var car: IGlyCar? = null
 
-    /** Свойства, за которыми следим, и провайдеры, которые от них зависят. */
-    private val watchedProperties = intArrayOf(
-        CarProperties.WIPER_SERVICE_POSITION,
-        CarProperties.TRUNK_STATE,
-        CarProperties.SEAT_HEATING,
-        CarProperties.SEAT_VENTILATION,
-        CarProperties.STEERING_WHEEL_HEATING,
-        CarProperties.SEAT_POSITION_RESTORE,
-        CarProperties.AIR_CIRCULATION,
-        CarProperties.DEFROST_REAR,
-    )
+    /** Когда в последний раз начинали подключение — чтобы не рвать попытку «в полёте». */
+    private var lastConnectAttemptAt = 0L
+
+    /** Свойства, за которыми следим; провайдеры, зависящие от них, — в [providersFor]. */
+    private val watchedProperties = CarProperties.WATCHED_PROPERTIES
 
     /** Сенсоры, за которыми следим (топливо — обновляет FuelWidgetProvider). */
-    private val watchedSensors = intArrayOf(
-        CarProperties.SENSOR_FUEL_PERCENTAGE,
-        CarProperties.SENSOR_FUEL_LEVEL,
-    )
+    private val watchedSensors = CarProperties.WATCHED_SENSORS
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -74,7 +66,9 @@ class CarStateService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (car == null) connect()
+        // Не только когда моста нет, но и когда связь разорвана: liveCar сбрасывается
+        // в onDisConnected, а car при этом остаётся не-null.
+        if (car == null || liveCar == null) reconnectIfStale()
         if (intent?.action == ACTION_RELAY) relayToProvider(intent)
         return START_STICKY
     }
@@ -103,18 +97,38 @@ class CarStateService : Service() {
         car = null
     }
 
+    /**
+     * Пересоздаёт мост, если предыдущая попытка подключения уже «протухла».
+     * onStartCommand вызывается на каждый клик, поэтому без этой защиты мы рвали бы
+     * соединение, которое ещё только устанавливается, и оно не поднялось бы никогда.
+     */
+    private fun reconnectIfStale() {
+        if (SystemClock.elapsedRealtime() - lastConnectAttemptAt < CONNECT_GRACE_MS) return
+        val previous = car
+        if (previous != null) {
+            try {
+                previous.unregisterValueWatcher()
+                previous.unregisterSensorWatcher()
+                previous.disconnect()
+            } catch (t: Throwable) {
+                Log.w(TAG, "cleanup of previous connection failed", t)
+            }
+            car = null
+        }
+        connect()
+    }
+
     private fun connect() {
+        lastConnectAttemptAt = SystemClock.elapsedRealtime()
         car = GlyCar.create(applicationContext, object : ConnectionListener {
             override fun onConnected() {
-                val ok = car?.registerValueWatcher(watchedProperties, watcher) ?: false
-                val sensorOk = car?.registerSensorWatcher(watchedSensors, sensorWatcher) ?: false
+                car?.registerValueWatcher(watchedProperties, watcher)
+                car?.registerSensorWatcher(watchedSensors, sensorWatcher)
                 liveCar = car
-                Log.d(TAG, "watcher registered=$ok sensorWatcher=$sensorOk")
             }
 
             override fun onDisConnected() {
                 liveCar = null
-                Log.w(TAG, "car disconnected")
             }
         })
     }
@@ -197,6 +211,9 @@ class CarStateService : Service() {
         private const val CHANNEL_ID = "car_state_sync"
         private const val NOTIFICATION_ID = 1
 
+        /** Сколько ждём результата подключения, прежде чем считать попытку протухшей. */
+        private const val CONNECT_GRACE_MS = 10_000L
+
         private const val ACTION_RELAY = "com.geely.geely_monjaro_widgets.action.RELAY"
         private const val EXTRA_TARGET = "com.geely.geely_monjaro_widgets.extra.TARGET"
         private const val EXTRA_RELAY_ACTION = "com.geely.geely_monjaro_widgets.extra.RELAY_ACTION"
@@ -207,7 +224,7 @@ class CarStateService : Service() {
                 val intent = Intent(context, CarStateService::class.java)
                 context.startForegroundService(intent)
             } catch (t: Throwable) {
-                Log.w(TAG, "ensureStarted failed: $t")
+                Log.w(TAG, "ensureStarted failed", t)
             }
         }
 

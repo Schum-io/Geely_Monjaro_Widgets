@@ -8,10 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.RemoteViews
+import com.geely.geely_monjaro_widgets.core.CarCommand
 import com.geely.geely_monjaro_widgets.core.CarProperties
-import com.geely.geely_monjaro_widgets.core.withCar
 import com.geely.geely_monjaro_widgets.service.CarStateService
-import com.geely.os.car.IGlyCar
 
 /**
  * Общая логика виджетов памяти сидений: работа с машиной и хранение выбранной
@@ -56,10 +55,12 @@ abstract class SeatMemoryWidgetProvider : AppWidgetProvider() {
         val manager = AppWidgetManager.getInstance(context)
         val ids = manager.getAppWidgetIds(ComponentName(context, javaClass))
         if (ids.isEmpty()) return
-        withCar(context) { car ->
-            val index = CarProperties.seatProfileIndex(
-                car.getIntProperty(CarProperties.SEAT_POSITION_RESTORE, areaId)
-            )
+        CarCommand.read(context) { car ->
+            val raw = car.getIntProperty(CarProperties.SEAT_POSITION_RESTORE, areaId)
+            // 0xFF — «состояние неизвестно» (нет связи / функция недоступна). Оставляем
+            // прежнюю подсветку: иначе подсветился бы профиль 1, как будто он выбран.
+            if (CarProperties.isUnavailable(raw)) return@read
+            val index = CarProperties.seatProfileIndex(raw)
             for (id in ids) {
                 setSelectedIndex(context, id, index)
                 manager.updateAppWidget(id, buildViews(context, id))
@@ -83,28 +84,26 @@ abstract class SeatMemoryWidgetProvider : AppWidgetProvider() {
                 .updateAppWidget(appWidgetId, buildViews(context, appWidgetId))
         }
 
-        // Быстрый путь: живое соединение сервиса — без переподключения.
-        val live = CarStateService.liveCar
-        if (live != null) {
-            try {
-                live.setIntProperty(
-                    CarProperties.SEAT_POSITION_RESTORE,
-                    areaId,
-                    CarProperties.seatProfileValue(profileIndex)
-                )
-            } catch (_: Throwable) {
-            }
-            return
-        }
-        // Запасной путь: разовое подключение.
-        val pendingResult = goAsync()
-        withCar(context, onDone = { pendingResult.finish() }) { car ->
-            car.setIntProperty(
-                CarProperties.SEAT_POSITION_RESTORE,
-                areaId,
-                CarProperties.seatProfileValue(profileIndex)
-            )
-        }
+        sendRestoreWithRetry(context, CarProperties.seatProfileValue(profileIndex))
+    }
+
+    /**
+     * Отправляет команду вызова профиля. Повторы нужны потому, что после долгой стоянки
+     * первая команда отклоняется — ЭБУ сиденья ещё спит.
+     */
+    private fun sendRestoreWithRetry(context: Context, value: Int) {
+        CarCommand.run(
+            context = context,
+            pendingResult = goAsync(),
+            action = { car ->
+                if (car.setIntProperty(CarProperties.SEAT_POSITION_RESTORE, areaId, value)) {
+                    value
+                } else {
+                    null
+                }
+            },
+            onSuccess = { /* подсветку уже выставили при нажатии */ },
+        )
     }
 
     /** Привязывает одну кнопку профиля: иконка по состоянию + обработчик нажатия. */

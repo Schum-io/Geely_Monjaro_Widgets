@@ -2,9 +2,36 @@ package com.geely.geely_monjaro_widgets.core
 
 /**
  * Идентификаторы свойств, зон и значений API машины Geely Monjaro.
- *
  */
 object CarProperties {
+
+    /**
+     * Что платформа возвращает ВМЕСТО реального значения, когда соединения с ECarX нет
+     * или функция сейчас `notavailable`. Это «состояние неизвестно», а не «выключено».
+     */
+    const val FUNCTION_VALUE_UNAVAILABLE = 0xFF
+
+    fun isUnavailable(value: Int): Boolean = value == FUNCTION_VALUE_UNAVAILABLE
+
+    /**
+     * Свойства, за изменениями которых следим, чтобы отражать правки из штатного меню.
+     * Общий список для фонового сервиса и экрана-хаба.
+     */
+    val WATCHED_PROPERTIES: IntArray
+        get() = intArrayOf(
+            WIPER_SERVICE_POSITION,
+            TRUNK_STATE,
+            SEAT_HEATING,
+            SEAT_VENTILATION,
+            STEERING_WHEEL_HEATING,
+            SEAT_POSITION_RESTORE,
+            AIR_CIRCULATION,
+            DEFROST_REAR,
+        )
+
+    /** Сенсоры, за которыми следим (топливо). */
+    val WATCHED_SENSORS: IntArray
+        get() = intArrayOf(SENSOR_FUEL_PERCENTAGE, SENSOR_FUEL_LEVEL)
 
     // ───── Дворники ─────
     /** GlyCarPropertyIds.SETTING_FUNC_WINDSCREEN_SERVICE_POSITION */
@@ -20,9 +47,11 @@ object CarProperties {
 
     const val TRUNK_OPEN = 1
     const val TRUNK_CLOSE = 0
+    /** В штатном API называется DOOR_PAUSE — остановить створку на полпути. */
     const val TRUNK_PAUSE = 0x21020101
 
-    // Значения TRUNK_STATE
+    // Значения TRUNK_STATE (сверено с GlyCarPropertyValue штатной прошивки)
+    const val TRUNK_STATE_UNKNOWN = 0x2c020601
     const val TRUNK_STATE_FULL_CLOSE = 0x2c020602
     const val TRUNK_STATE_MOVE_UP = 0x2c020603
     const val TRUNK_STATE_MOVE_UP_BREAK = 0x2c020604
@@ -36,26 +65,35 @@ object CarProperties {
 
     /**
      * Считается ли багажник «открытым или открывающимся» — для toggle-виджета
-     * (в этом случае команда должна закрывать).
+     * (в этом случае команда должна закрывать). Неизвестное состояние (UNKNOWN от самой
+     * машины либо сентинел 0xFF) трактуем как «закрыт»: нажатие пошлёт «открыть».
      */
     fun isTrunkOpenish(state: Int): Boolean = when (state) {
         TRUNK_STATE_FULL_OPEN,
         TRUNK_STATE_MOVE_UP,
         TRUNK_STATE_MOVE_UP_BREAK,
         TRUNK_STATE_STOP_DURING_OPEN -> true
+
         else -> false
     }
 
-    /** Команда для toggle-нажатия исходя из текущего состояния багажника. */
-    fun trunkToggleCommand(state: Int): Int =
-        if (isTrunkOpenish(state)) TRUNK_CLOSE else TRUNK_OPEN
-
     // ───── Память сидений ─────
-    /** Восстановление (вызов) сохранённого профиля положения сиденья. */
+    /**
+     * Выбор слота + вызов профиля (SETTING_FUNC_SEAT_POSITION_SAVE_AS_RESTORE).
+     * Свойство читаемое: возвращает текущий выбранный слот — этим и подсвечиваем кнопку.
+     *
+     * ⚠️ Рядом есть опасное свойство `SEAT_POSITION_SAVE = 0x2d400100`: запись в него
+     * значения 1 ПЕРЕЗАПИСЫВАЕТ выбранный слот текущим положением сиденья (штатная
+     * кнопка «Сохранить»). Мы в 0x2d400100 не пишем никогда, иначе затрём профиль.
+     */
     const val SEAT_POSITION_RESTORE = 0x2d500600
     const val AREA_SEAT_DRIVER = 0x1
     const val AREA_SEAT_PASSENGER = 0x4
 
+    /**
+     * Значения слотов. Штатное приложение (getSeatSavePosition) нумерует кнопки именно
+     * так, пропуская SAVE_AS_1 (0x2d500501) — сверено с декомпилом.
+     */
     const val SEAT_PROFILE_1 = 0x2d500502
     const val SEAT_PROFILE_2 = 0x2d500503
     const val SEAT_PROFILE_3 = 0x2d500504
@@ -101,6 +139,21 @@ object CarProperties {
     /** Обогрев заднего стекла — toggle 0/1, без areaId. */
     const val DEFROST_REAR = 0x10040300
 
+    // ───── Готовность функций ─────
+    /**
+     * Достоверно ли известно, что функция сейчас НЕ работает физически.
+     *
+     * Признак «работает» — строгий `FunctionStatus == active`: по нему же штатное меню
+     * включает свои кнопки, поэтому на заведённой машине статус заведомо `active`, а на
+     * заглушённой — нет. Гейт только на понижение: `null` (статус не прочитался) НЕ
+     * блокирует, иначе виджет гаснет там, где на деле всё исправно.
+     *
+     * Пробовали вместо этого гейт по зажиганию (0x200100) и режиму машины (0x201400),
+     * как в штатном HVAC-приложении, — на этой машине читаются недостоверно, отказались.
+     */
+    fun isKnownInactive(status: String?): Boolean =
+        status != null && !status.equals("active", ignoreCase = true)
+
     // ───── Топливо ─────
     /** Уровень топлива в баке в процентах (сенсор, float 0..100). */
     const val SENSOR_FUEL_PERCENTAGE = 0x404500
@@ -130,6 +183,12 @@ object CarProperties {
     }
 
     const val SEAT_LEVEL_MAX = 3
+
+    /**
+     * Служебное значение AUTO имеет вид `база|0xF`, например 0x1005020F.
+     * Оно не является обычным уровнем 1..3 и при декодировании отображается как OFF.
+     */
+    fun isAutoLevel(value: Int): Boolean = value != 0 && (value and 0xF) == 0xF
 
     /** Декодирует прочитанное значение свойства в уровень 0..3 (auto/прочее → 0). */
     fun decodeSeatLevel(value: Int): Int {

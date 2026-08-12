@@ -1,6 +1,7 @@
 package com.geely.geely_monjaro_widgets.core
 
 import android.content.Context
+import android.util.Log
 import com.geely.os.car.ConnectionListener
 import com.geely.os.car.GlyCar
 import com.geely.os.car.IGlyCar
@@ -19,7 +20,8 @@ fun withCar(context: Context, onDone: () -> Unit = {}, block: (IGlyCar) -> Unit)
         override fun onConnected() {
             try {
                 block(car!!)
-            } catch (_: Exception) {
+            } catch (t: Throwable) {
+                Log.w("CarAccess", "withCar block failed", t)
             } finally {
                 car?.disconnect()
                 finish()

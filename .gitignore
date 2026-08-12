@@ -1,17 +1,37 @@
-*.iml
-.gradle
-/local.properties
-.DS_Store
+# ───── Сборка ─────
 /build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.idea
-/.vscode
-/.kotlin
-/app/release
+/app/build
 /glycar-api/build
 /psd-widget-module/build
+/app/release
 /psd-widget-module/release
+.gradle
+.kotlin
+.cxx
+.externalNativeBuild
+/captures
+
+bin/
+
+# Собранные артефакты
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# ───── Подписи и локальные настройки ─────
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# ───── IDE и ОС ─────
+*.iml
+.idea
+/.vscode
+.DS_Store
+.claude/settings.local.json
+
+# ───── Прочее ─────
 /docs/superpowers
+*.log

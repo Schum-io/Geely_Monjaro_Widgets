@@ -87,7 +87,7 @@ public class PsdWidgetHook implements IXposedHookLoadPackage {
                 continue; // результат кешируется лаунчером — избегаем дублей
             }
             try {
-                Object entity = entityCls.newInstance();
+                Object entity = entityCls.getDeclaredConstructor().newInstance();
                 XposedHelpers.setObjectField(entity, "packageName", CLASS_PKG);
                 XposedHelpers.setObjectField(entity, "className", provider);
                 XposedHelpers.setIntField(entity, "displayType", DISPLAY_TYPE_PSD);

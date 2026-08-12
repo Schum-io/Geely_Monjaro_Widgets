@@ -40,20 +40,17 @@ public final class GlyCar {
                     @Override
                     public void onConnected() {
                         mCarFunction = mCar.getICarFunction();
-                        Log.d(TAG, "onConnected, carFunction=" + mCarFunction);
                         if (listener != null) listener.onConnected();
                     }
 
                     @Override
                     public void onDisConnected() {
                         mCarFunction = null;
-                        Log.w(TAG, "onDisConnected");
                         if (listener != null) listener.onDisConnected();
                     }
                 });
             } else {
                 mCarFunction = car.getICarFunction();
-                Log.d(TAG, "sync connect, carFunction=" + mCarFunction);
                 if (listener != null) listener.onConnected();
             }
         }
@@ -62,7 +59,6 @@ public final class GlyCar {
         public int getIntProperty(int propertyId, int areaId) {
             ICarFunction cf = mCarFunction;
             if (cf == null) {
-                Log.w(TAG, "getIntProperty called but carFunction is null");
                 return 0;
             }
             return cf.getFunctionValue(propertyId, areaId);
@@ -72,7 +68,6 @@ public final class GlyCar {
         public boolean setIntProperty(int propertyId, int areaId, int value) {
             ICarFunction cf = mCarFunction;
             if (cf == null) {
-                Log.w(TAG, "setIntProperty called but carFunction is null");
                 return false;
             }
             return cf.setFunctionValue(propertyId, areaId, value);
@@ -82,7 +77,6 @@ public final class GlyCar {
         public int getIntProperty(int propertyId) {
             ICarFunction cf = mCarFunction;
             if (cf == null) {
-                Log.w(TAG, "getIntProperty(no-area) called but carFunction is null");
                 return 0;
             }
             return cf.getFunctionValue(propertyId);
@@ -92,7 +86,6 @@ public final class GlyCar {
         public boolean setIntProperty(int propertyId, int value) {
             ICarFunction cf = mCarFunction;
             if (cf == null) {
-                Log.w(TAG, "setIntProperty(no-area) called but carFunction is null");
                 return false;
             }
             return cf.setFunctionValue(propertyId, value);
@@ -103,12 +96,11 @@ public final class GlyCar {
             try {
                 ISensor sensor = mCar.getSensorManager();
                 if (sensor == null) {
-                    Log.w(TAG, "getSensorValue: sensor manager is null");
                     return 0f;
                 }
                 return sensor.getSensorLatestValue(sensorType);
             } catch (Throwable t) {
-                Log.w(TAG, "getSensorValue failed: " + t);
+                Log.w(TAG, "getSensorValue(0x" + Integer.toHexString(sensorType) + ") failed", t);
                 return 0f;
             }
         }
@@ -133,31 +125,47 @@ public final class GlyCar {
                 }
                 return liters;
             } catch (Throwable t) {
-                Log.w(TAG, "getFuelTankCapacityLiters failed: " + t);
+                Log.w(TAG, "getFuelTankCapacityLiters failed", t);
                 return 0f;
             }
         }
 
-        @Override
-        public boolean isFunctionActive(int propertyId) {
+        /**
+         * Возвращает имя FunctionStatus, а не сам enum: в stub-модуле это заглушка,
+         * и порядок констант реального enum нам не гарантирован — сравнивать по
+         * ordinal() нельзя. areaId == null — вызвать перегрузку без зоны; если
+         * прошивка её не знает, NoSuchMethodError гасится здесь же и даёт null.
+         */
+        private String readSupportStatus(int propertyId, Integer areaId) {
             ICarFunction cf = mCarFunction;
             if (cf == null) {
-                return false;
+                return null;
             }
             try {
-                Object status = cf.isFunctionSupported(propertyId);
-                return status != null && "active".equalsIgnoreCase(String.valueOf(status));
+                Object status = areaId == null
+                        ? cf.isFunctionSupported(propertyId)
+                        : cf.isFunctionSupported(propertyId, areaId);
+                return status == null ? null : String.valueOf(status);
             } catch (Throwable t) {
-                Log.w(TAG, "isFunctionActive failed: " + t);
-                return false;
+                Log.w(TAG, "isFunctionSupported(0x" + Integer.toHexString(propertyId) + ") failed", t);
+                return null;
             }
+        }
+
+        @Override
+        public String supportStatus(int propertyId) {
+            return readSupportStatus(propertyId, null);
+        }
+
+        @Override
+        public String supportStatus(int propertyId, int areaId) {
+            return readSupportStatus(propertyId, areaId);
         }
 
         @Override
         public boolean registerValueWatcher(int[] propertyIds, final GlyCarValueWatcher watcher) {
             ICarFunction cf = mCarFunction;
             if (cf == null || watcher == null) {
-                Log.w(TAG, "registerValueWatcher: carFunction null or watcher null");
                 return false;
             }
             ICarFunction.IFunctionValueWatcher w = new ICarFunction.IFunctionValueWatcher() {
@@ -206,7 +214,6 @@ public final class GlyCar {
             }
             ISensor sensor = mCar.getSensorManager();
             if (sensor == null) {
-                Log.w(TAG, "registerSensorWatcher: sensor manager is null");
                 return false;
             }
             ISensor.ISensorListener listener = new ISensor.ISensorListener() {
@@ -230,7 +237,7 @@ public final class GlyCar {
                     ok &= sensor.registerListener(listener, sensorType);
                 }
             } catch (Throwable t) {
-                Log.w(TAG, "registerSensorWatcher failed: " + t);
+                Log.w(TAG, "registerSensorWatcher failed", t);
                 return false;
             }
             mSensorListener = listener;
@@ -249,7 +256,7 @@ public final class GlyCar {
                     sensor.unregisterListener(listener);
                 }
             } catch (Throwable t) {
-                Log.w(TAG, "unregisterSensorWatcher failed: " + t);
+                Log.w(TAG, "unregisterSensorWatcher failed", t);
             }
             mSensorListener = null;
         }

@@ -17,8 +17,14 @@ public interface IGlyCar {
      */
     float getFuelTankCapacityLiters();
 
-    /** true, если функция сейчас реально доступна (FunctionStatus.active). */
-    boolean isFunctionActive(int propertyId);
+    /**
+     * Имя FunctionStatus: "active" | "notactive" | "notavailable" | "error",
+     * либо null, если определить не удалось. Возвращаем строку, а не boolean:
+     * решение «доступна ли функция» принимает вызывающий виджет (см.
+     * CarProperties.isKnownInactive), а не этот мост.
+     */
+    String supportStatus(int propertyId);
+    String supportStatus(int propertyId, int areaId);
 
     /** Подписка на изменения значений указанных свойств. */
     boolean registerValueWatcher(int[] propertyIds, GlyCarValueWatcher watcher);

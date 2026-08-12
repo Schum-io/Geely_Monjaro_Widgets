@@ -42,8 +42,10 @@ import com.geely.os.car.IGlyCar
 
 /**
  * Экран-хаб управления функциями машины. Дублирует возможности виджетов.
- * Соединение с машиной держится, пока экран открыт (connect в onResume,
- * disconnect в onPause) — как в исходном проекте Geely_Monjaro_Wipers.
+ *
+ * Держит собственное соединение, пока экран открыт (connect в onResume, disconnect
+ * в onPause), и на время открытия подписывается на те же свойства, что и фоновый
+ * CarStateService — чтобы правки из штатного меню сразу отражались на экране.
  */
 class MainActivity : ComponentActivity() {
 
@@ -122,9 +124,17 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         car = GlyCar.create(this, object : ConnectionListener {
-            override fun onConnected() = runOnUiThread {
-                connected.value = true
-                readState()
+            override fun onConnected() {
+                car?.registerValueWatcher(CarProperties.WATCHED_PROPERTIES) { _, _ ->
+                    runOnUiThread { readState() }
+                }
+                car?.registerSensorWatcher(CarProperties.WATCHED_SENSORS) { _, _ ->
+                    runOnUiThread { readState() }
+                }
+                runOnUiThread {
+                    connected.value = true
+                    readState()
+                }
             }
 
             override fun onDisConnected() = runOnUiThread {
@@ -135,6 +145,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        car?.unregisterValueWatcher()
+        car?.unregisterSensorWatcher()
         car?.disconnect()
         car = null
         connected.value = false
@@ -158,7 +170,8 @@ class MainActivity : ComponentActivity() {
             CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING))
         recircOn.value =
             c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
-        rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
+        rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1 &&
+            !CarProperties.isKnownInactive(c.supportStatus(CarProperties.DEFROST_REAR))
         val fuel = c.getSensorValue(CarProperties.SENSOR_FUEL_PERCENTAGE)
         fuelPercent.value = if (fuel > 0f) Math.round(fuel) else -1
         val liters = CarProperties.fuelLiters(
@@ -170,29 +183,39 @@ class MainActivity : ComponentActivity() {
     private fun onRecircToggle() {
         val c = car ?: return
         val active = c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
-        c.setIntProperty(
-            CarProperties.AIR_CIRCULATION,
+        val next =
             if (active) CarProperties.CIRCULATION_OUTSIDE else CarProperties.CIRCULATION_INNER
-        )
-        recircOn.value =
-            c.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
+        if (c.setIntProperty(CarProperties.AIR_CIRCULATION, next)) {
+            recircOn.value = !active
+        }
     }
 
     private fun onRearDefrostToggle() {
         val c = car ?: return
         val active = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
-        c.setIntProperty(CarProperties.DEFROST_REAR, if (active) 0 else 1)
-        rearDefrostOn.value = c.getIntProperty(CarProperties.DEFROST_REAR) == 1
+        if (c.setIntProperty(CarProperties.DEFROST_REAR, if (active) 0 else 1)) {
+            // Как в виджете: на заглушённой машине запись проходит, но функция не работает.
+            val available = !CarProperties.isKnownInactive(c.supportStatus(CarProperties.DEFROST_REAR))
+            rearDefrostOn.value = !active && available
+        }
     }
 
     private fun cycleSteeringHeat() {
         val c = car ?: return
-        val current = CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING))
+        val raw = c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING)
+        val current = CarProperties.decodeSeatLevel(raw)
         val enabled = ModeConfig.enabledLevels(this, CarProperties.STEERING_WHEEL_HEATING, null)
-        val next = CarProperties.nextSeatLevel(current, enabled)
-        c.setIntProperty(CarProperties.STEERING_WHEEL_HEATING, CarProperties.encodeSeatLevel(CarProperties.STEERING_WHEEL_HEATING, next))
-        // Реальное состояние: при отклонённой команде (двигатель заглушён) уровень не изменится.
-        steeringHeatLevel.value = CarProperties.decodeSeatLevel(c.getIntProperty(CarProperties.STEERING_WHEEL_HEATING))
+        // AUTO не выбирается отдельной кнопкой руля. Если API всё же вернул это
+        // служебное значение, следующее нажатие явно сбрасывает его в OFF.
+        val next = if (CarProperties.isAutoLevel(raw)) {
+            0
+        } else {
+            CarProperties.nextSeatLevel(current, enabled)
+        }
+        val encoded = CarProperties.encodeSeatLevel(CarProperties.STEERING_WHEEL_HEATING, next)
+        if (c.setIntProperty(CarProperties.STEERING_WHEEL_HEATING, encoded)) {
+            steeringHeatLevel.value = next
+        }
     }
 
     private fun cycleClimate(
@@ -204,9 +227,10 @@ class MainActivity : ComponentActivity() {
         val current = CarProperties.decodeSeatLevel(c.getIntProperty(propertyId, areaId))
         val enabled = ModeConfig.enabledLevels(this, propertyId, areaId)
         val next = CarProperties.nextSeatLevel(current, enabled)
-        c.setIntProperty(propertyId, areaId, CarProperties.encodeSeatLevel(propertyId, next))
-        // Реальное состояние: при отклонённой команде (двигатель заглушён) уровень не изменится.
-        level.value = CarProperties.decodeSeatLevel(c.getIntProperty(propertyId, areaId))
+
+        if (c.setIntProperty(propertyId, areaId, CarProperties.encodeSeatLevel(propertyId, next))) {
+            level.value = next
+        }
     }
 
     /** Читает сохранённые наборы режимов в состояние экрана. */

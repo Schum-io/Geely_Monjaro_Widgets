@@ -17,9 +17,10 @@ import com.geely.os.car.IGlyCar
 
 /**
  * Базовый класс для виджетов с одной кнопкой, циклически переключающей уровень
- * свойства машины (OFF → 3 → 2 → 1 → OFF). Иконка отражает текущий уровень.
+ * свойства машины (OFF → 3 → 2 → 1 → OFF; набор уровней настраивается в приложении).
+ * Иконка отражает текущий уровень.
  *
- * Используется для подогрева и вентиляции сидений.
+ * Используется для подогрева и вентиляции сидений и подогрева руля.
  */
 abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
 
@@ -45,6 +46,25 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
     /** Круг-индикатор активного состояния (по умолчанию оранжевый). */
     protected open val activeCircleRes: Int = R.drawable.climate_circle_on
 
+    /**
+     * AUTO не является отдельным режимом кнопки руля. Если API вернул такое служебное
+     * значение, следующее нажатие сбрасывает его в OFF; для сидений начинается обычный цикл.
+     */
+    protected open val autoExitsToOff: Boolean = false
+
+    /**
+     * Работает ли функция физически прямо сейчас. На заглушённой машине свойство
+     * принимает запись и меняет значение, но ничего не греется — поэтому «включено»
+     * рисуем только когда функция реально активна.
+     */
+    protected open fun isAvailable(car: IGlyCar): Boolean =
+        !CarProperties.isKnownInactive(readSupportStatus(car))
+
+    private fun readSupportStatus(car: IGlyCar): String? {
+        val area = areaId
+        return if (area != null) car.supportStatus(propertyId, area) else car.supportStatus(propertyId)
+    }
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -62,35 +82,32 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action != actionName) return
 
-        // Быстрый путь: живое соединение сервиса — без переподключения.
-        val live = CarStateService.liveCar
-        if (live != null) {
-            try {
-                applyCycle(context, live)
-            } catch (_: Throwable) {
-            }
-            return
-        }
-        // Запасной путь: разовое подключение.
-        val pendingResult = goAsync()
-        withCar(context, onDone = { pendingResult.finish() }) { car ->
-            applyCycle(context, car)
-        }
-    }
-
-    private fun applyCycle(context: Context, car: IGlyCar) {
-        val current = CarProperties.decodeSeatLevel(readEncoded(car))
-        val enabled = ModeConfig.enabledLevels(context, propertyId, areaId)
-        val next = CarProperties.nextSeatLevel(current, enabled)
-        writeEncoded(car, CarProperties.encodeSeatLevel(propertyId, next))
-        // Показываем РЕАЛЬНОЕ состояние, а не предполагаемое: если машина
-        // отклонила команду (напр. двигатель заглушён), уровень не изменится.
-        updateIcon(context, CarProperties.decodeSeatLevel(readEncoded(car)))
+        CarCommand.run(
+            context = context,
+            pendingResult = goAsync(),
+            action = { car ->
+                val raw = readEncoded(car)
+                val current = CarProperties.decodeSeatLevel(raw)
+                val enabled = ModeConfig.enabledLevels(context, propertyId, areaId)
+                val next = if (autoExitsToOff && CarProperties.isAutoLevel(raw)) {
+                    0
+                } else {
+                    CarProperties.nextSeatLevel(current, enabled)
+                }
+                // Доступность проверяем после записи, как и в toggle-виджетах.
+                if (writeEncoded(car, CarProperties.encodeSeatLevel(propertyId, next))) {
+                    if (isAvailable(car)) next else 0
+                } else {
+                    null
+                }
+            },
+            onSuccess = { level -> updateIcon(context, level) },
+        )
     }
 
     private fun refreshLevel(context: Context) {
-        withCar(context) { car ->
-            val level = CarProperties.decodeSeatLevel(readEncoded(car))
+        CarCommand.read(context) { car ->
+            val level = if (isAvailable(car)) CarProperties.decodeSeatLevel(readEncoded(car)) else 0
             updateIcon(context, level)
         }
     }
@@ -100,9 +117,14 @@ abstract class CycleLevelWidgetProvider : AppWidgetProvider() {
         return if (area != null) car.getIntProperty(propertyId, area) else car.getIntProperty(propertyId)
     }
 
-    private fun writeEncoded(car: IGlyCar, encoded: Int) {
+    /** Возвращает ответ машины: false = команду не приняли, её нужно повторить. */
+    private fun writeEncoded(car: IGlyCar, encoded: Int): Boolean {
         val area = areaId
-        if (area != null) car.setIntProperty(propertyId, area, encoded) else car.setIntProperty(propertyId, encoded)
+        return if (area != null) {
+            car.setIntProperty(propertyId, area, encoded)
+        } else {
+            car.setIntProperty(propertyId, encoded)
+        }
     }
 
     private fun updateIcon(context: Context, level: Int) {

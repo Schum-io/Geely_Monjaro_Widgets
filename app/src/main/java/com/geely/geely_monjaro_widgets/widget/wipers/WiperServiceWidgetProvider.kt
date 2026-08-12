@@ -17,9 +17,11 @@ class WiperServiceWidgetProvider : ToggleCarWidgetProvider() {
     override fun isActive(car: IGlyCar): Boolean =
         car.getIntProperty(CarProperties.WIPER_SERVICE_POSITION, CarProperties.AREA_FRONT_WIPER) == 1
 
-    override fun toggle(car: IGlyCar, currentlyActive: Boolean) {
+    override fun toggle(car: IGlyCar, currentlyActive: Boolean): Boolean {
         val next = if (currentlyActive) 0 else 1
-        car.setIntProperty(CarProperties.WIPER_SERVICE_POSITION, CarProperties.AREA_FRONT_WIPER, next)
+        return car.setIntProperty(
+            CarProperties.WIPER_SERVICE_POSITION, CarProperties.AREA_FRONT_WIPER, next
+        )
     }
 
     override fun iconRes(active: Boolean): Int =

@@ -10,6 +10,8 @@ import com.geely.os.car.IGlyCar
  * открыт или открывается — закрывает, иначе открывает.
  *
  * Чтение состояния — TRUNK_STATE, команда — отдельный командный property TRUNK_COMMAND.
+ * Иконка перекрашивается сразу, как машина приняла команду: створка едет несколько
+ * секунд, точное состояние потом пришлёт CarStateService по watcher'у TRUNK_STATE.
  */
 class TrunkWidgetProvider : ToggleCarWidgetProvider() {
 
@@ -22,15 +24,10 @@ class TrunkWidgetProvider : ToggleCarWidgetProvider() {
         return CarProperties.isTrunkOpenish(state)
     }
 
-    override fun toggle(car: IGlyCar, currentlyActive: Boolean) {
+    override fun toggle(car: IGlyCar, currentlyActive: Boolean): Boolean {
         val command = if (currentlyActive) CarProperties.TRUNK_CLOSE else CarProperties.TRUNK_OPEN
-        car.setIntProperty(CarProperties.TRUNK_COMMAND, CarProperties.AREA_TRUNK, command)
+        return car.setIntProperty(CarProperties.TRUNK_COMMAND, CarProperties.AREA_TRUNK, command)
     }
-
-    // НЕ оптимистично: показываем реальное состояние. Если машина отклонила команду
-    // (напр. в движении) — значок не загорится. При успешном открытии значок обновит
-    // CarStateService, когда TRUNK_STATE изменится (створка поедет).
-    // optimistic оставлен false (значение по умолчанию базового класса).
 
     override fun iconRes(active: Boolean): Int =
         if (active) R.drawable.ic_trunk_on else R.drawable.ic_trunk_off

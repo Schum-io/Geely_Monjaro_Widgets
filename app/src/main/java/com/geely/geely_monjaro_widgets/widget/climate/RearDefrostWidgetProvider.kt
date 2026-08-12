@@ -16,14 +16,13 @@ class RearDefrostWidgetProvider : ToggleCarWidgetProvider() {
     override val actionName = ACTION_TOGGLE_REAR_DEFROST
 
     override fun isActive(car: IGlyCar): Boolean =
-        // «Включено» только если функция реально активна (на заглушённой машине
-        // свойство принимает запись, но функция не active — тогда не показываем on).
-        car.isFunctionActive(CarProperties.DEFROST_REAR) &&
-            car.getIntProperty(CarProperties.DEFROST_REAR) == 1
+        car.getIntProperty(CarProperties.DEFROST_REAR) == 1
 
-    override fun toggle(car: IGlyCar, currentlyActive: Boolean) {
+    override fun isAvailable(car: IGlyCar): Boolean =
+        !CarProperties.isKnownInactive(car.supportStatus(CarProperties.DEFROST_REAR))
+
+    override fun toggle(car: IGlyCar, currentlyActive: Boolean): Boolean =
         car.setIntProperty(CarProperties.DEFROST_REAR, if (currentlyActive) 0 else 1)
-    }
 
     override fun iconRes(active: Boolean): Int = R.drawable.ic_rear_defrost
 

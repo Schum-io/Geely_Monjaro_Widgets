@@ -9,7 +9,7 @@ import org.junit.Test
 class CarPropertiesTest {
 
     @Test
-    fun trunk_openish_states_close_on_toggle() {
+    fun trunk_openish_states_are_openish() {
         val openStates = listOf(
             CarProperties.TRUNK_STATE_FULL_OPEN,
             CarProperties.TRUNK_STATE_MOVE_UP,
@@ -18,23 +18,29 @@ class CarPropertiesTest {
         )
         for (state in openStates) {
             assertTrue("state $state should be openish", CarProperties.isTrunkOpenish(state))
-            assertEquals(CarProperties.TRUNK_CLOSE, CarProperties.trunkToggleCommand(state))
         }
     }
 
     @Test
-    fun trunk_closed_states_open_on_toggle() {
+    fun trunk_closed_states_are_not_openish() {
         val closedStates = listOf(
             CarProperties.TRUNK_STATE_FULL_CLOSE,
             CarProperties.TRUNK_STATE_MOVE_DOWN,
+            CarProperties.TRUNK_STATE_MOVE_DOWN_BREAK,
             CarProperties.TRUNK_STATE_STOP_DURING_CLOSE,
             CarProperties.TRUNK_STATE_HALF_CLOSE,
             CarProperties.TRUNK_STATE_STOP_MIN_POSITION,
         )
         for (state in closedStates) {
             assertFalse("state $state should not be openish", CarProperties.isTrunkOpenish(state))
-            assertEquals(CarProperties.TRUNK_OPEN, CarProperties.trunkToggleCommand(state))
         }
+    }
+
+    @Test
+    fun trunk_unknown_state_is_treated_as_closed() {
+        // UNKNOWN и сентинел недоступности → «закрыт», нажатие пошлёт «открыть».
+        assertFalse(CarProperties.isTrunkOpenish(CarProperties.TRUNK_STATE_UNKNOWN))
+        assertFalse(CarProperties.isTrunkOpenish(0xFF))
     }
 
     @Test

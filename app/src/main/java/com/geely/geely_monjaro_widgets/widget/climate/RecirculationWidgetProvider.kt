@@ -18,9 +18,13 @@ class RecirculationWidgetProvider : ToggleCarWidgetProvider() {
     override fun isActive(car: IGlyCar): Boolean =
         car.getIntProperty(CarProperties.AIR_CIRCULATION) == CarProperties.CIRCULATION_INNER
 
-    override fun toggle(car: IGlyCar, currentlyActive: Boolean) {
-        val next = if (currentlyActive) CarProperties.CIRCULATION_OUTSIDE else CarProperties.CIRCULATION_INNER
-        car.setIntProperty(CarProperties.AIR_CIRCULATION, next)
+    override fun isAvailable(car: IGlyCar): Boolean =
+        !CarProperties.isKnownInactive(car.supportStatus(CarProperties.AIR_CIRCULATION))
+
+    override fun toggle(car: IGlyCar, currentlyActive: Boolean): Boolean {
+        val next =
+            if (currentlyActive) CarProperties.CIRCULATION_OUTSIDE else CarProperties.CIRCULATION_INNER
+        return car.setIntProperty(CarProperties.AIR_CIRCULATION, next)
     }
 
     override fun iconRes(active: Boolean): Int =
